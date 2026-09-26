@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>西武バス 接近情報</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        sans-serif;
+
+      background: #f5f7fa;
+      color: #333333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ========================================
+       タイトル
+       ======================================== */
+
+    h1 {
+      margin: 10px 0 25px;
+      text-align: center;
+      font-size: 26px;
+      color: #222222;
+    }
+
+
+    /* ========================================
+       セクション
+       ======================================== */
+
+    .section {
+      background: #ffffff;
+      padding: 22px;
+      margin-bottom: 20px;
+
+      border: 1px solid #e1e5ea;
+      border-radius: 14px;
+
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+
+    /* ========================================
+       ラベル
+       ======================================== */
+
+    label {
+      display: block;
+
+      margin-top: 16px;
+      margin-bottom: 7px;
+
+      font-size: 14px;
+      font-weight: bold;
+
+      color: #444444;
+    }
+
+    label:first-child {
+      margin-top: 0;
+    }
+
+
+    /* ========================================
+       セレクトボックス
+       ======================================== */
+
+    select {
+      width: 100%;
+      padding: 13px 12px;
+
+      border: 1px solid #cfd5dc;
+      border-radius: 9px;
+
+      background: #ffffff;
+      color: #333333;
+
+      font-size: 16px;
+
+      outline: none;
+    }
+
+    select:focus {
+      border-color: #1976d2;
+      box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+    }
+
+    select:disabled {
+      background: #f1f3f5;
+      color: #999999;
+    }
+
+
+    /* ========================================
+       共通ボタン
+       ======================================== */
+
+    button {
+      width: 100%;
+
+      border: none;
+      border-radius: 9px;
+
+      font-size: 16px;
+      font-weight: bold;
+
+      cursor: pointer;
+
+      transition:
+        background 0.15s,
+        transform 0.05s;
+    }
+
+    button:active {
+      transform: scale(0.99);
+    }
+
+
+    /* ========================================
+       接近情報ボタン
+       ======================================== */
+
+    #searchButton {
+      margin-top: 22px;
+      padding: 14px;
+
+      background: #1976d2;
+      color: #ffffff;
+    }
+
+    #searchButton:hover {
+      background: #1565c0;
+    }
+
+
+    /* ========================================
+       お気に入り追加
+       ======================================== */
+
+    #favoriteAddButton {
+      margin-top: 10px;
+      padding: 13px;
+
+      background: #ffffff;
+      color: #1976d2;
+
+      border: 1px solid #1976d2;
+    }
+
+    #favoriteAddButton:hover {
+      background: #f0f7ff;
+    }
+
+
+    /* ========================================
+       説明
+       ======================================== */
+
+    .note {
+      margin-top: 12px;
+
+      color: #888888;
+
+      font-size: 13px;
+      line-height: 1.5;
+
+      text-align: center;
+    }
+
+
+    /* ========================================
+       お気に入りタイトル
+       ======================================== */
+
+    h2 {
+      margin: 0 0 14px;
+
+      font-size: 19px;
+      color: #333333;
+    }
+
+
+    /* ========================================
+       お気に入り
+       ======================================== */
+
+    .favorite-item {
+      display: flex;
+
+      align-items: stretch;
+
+      gap: 8px;
+
+      margin-top: 10px;
+    }
+
+
+    /* お気に入り本体 */
+
+    .favorite-main {
+      flex: 1;
+
+      width: auto;
+
+      margin: 0;
+      padding: 13px 15px;
+
+      background: #ffffff;
+
+      color: #333333;
+
+      border: 1px solid #d8dde3;
+      border-radius: 10px;
+
+      text-align: left;
+
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .favorite-main:hover {
+      background: #f5f9ff;
+
+      border-color: #90caf9;
+    }
+
+
+    /* 路線名 */
+
+    .favorite-route {
+      margin-bottom: 5px;
+
+      font-size: 15px;
+      font-weight: bold;
+
+      color: #1976d2;
+    }
+
+
+    /* バス停 */
+
+    .favorite-stops {
+      font-size: 14px;
+
+      color: #555555;
+
+      line-height: 1.4;
+    }
+
+
+    /* ========================================
+       削除ボタン
+       ======================================== */
+
+    .delete-button {
+      flex: 0 0 48px;
+
+      width: 48px;
+
+      margin: 0;
+      padding: 0;
+
+      background: #ffffff;
+
+      color: #999999;
+
+      border: 1px solid #d8dde3;
+      border-radius: 10px;
+
+      font-size: 17px;
+    }
+
+    .delete-button:hover {
+      background: #fff5f5;
+
+      color: #d32f2f;
+
+      border-color: #ef9a9a;
+    }
+
+
+    /* ========================================
+       お気に入りなし
+       ======================================== */
+
+    .empty-favorite {
+      padding: 18px 0;
+
+      color: #999999;
+
+      font-size: 14px;
+
+      text-align: center;
+    }
+
+
+    /* ========================================
+       スマホ
+       ======================================== */
+
+    @media (max-width: 480px) {
+
+      body {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      select {
+        font-size: 15px;
+      }
+
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+  <h1>🚌 西武バス 接近情報</h1>
+
+
+  <!-- ========================================
+       経路選択
+       ======================================== -->
+
+  <div class="section">
+
+    <label for="routeSelect">
+      路線
+    </label>
+
+    <select id="routeSelect">
+      <option value="">
+        路線を選択してください
+      </option>
+    </select>
+
+
+    <label for="fromStop">
+      乗車バス停
+    </label>
+
+    <select id="fromStop" disabled>
+      <option value="">
+        先に路線を選択してください
+      </option>
+    </select>
+
+
+    <label for="toStop">
+      降車バス停
+    </label>
+
+    <select id="toStop" disabled>
+      <option value="">
+        先に路線を選択してください
+      </option>
+    </select>
+
+
+    <button id="searchButton">
+      🚍 接近情報を見る
+    </button>
+
+
+    <button id="favoriteAddButton">
+      ⭐ お気に入りに追加
+    </button>
+
+
+    <div class="note">
+      お気に入りをクリックすると<br>
+      すぐに接近情報を開きます
+    </div>
+
+  </div>
+
+
+  <!-- ========================================
+       お気に入り
+       ======================================== -->
+
+  <div class="section">
+
+    <h2>⭐ お気に入り</h2>
+
+    <div id="favoriteList"></div>
+
+  </div>
+
+</div>
+
+
+<script src="./busStops.js"></script>
+
+
+<script>
+
+  const routeSelect =
+    document.getElementById("routeSelect");
+
+  const fromStop =
+    document.getElementById("fromStop");
+
+  const toStop =
+    document.getElementById("toStop");
+
+  const searchButton =
+    document.getElementById("searchButton");
+
+  const favoriteAddButton =
+    document.getElementById("favoriteAddButton");
+
+  const favoriteList =
+    document.getElementById("favoriteList");
+
+
+  const FAVORITE_KEY =
+    "seibuBusFavorites";
+
+
+  /* ========================================
+     路線一覧
+     ======================================== */
+
+  Object.keys(busRoutes).forEach(route => {
+
+    const option =
+      document.createElement("option");
+
+    option.value = route;
+    option.textContent = route;
+
+    routeSelect.appendChild(option);
+
+  });
+
+
+  /* ========================================
+     バス停一覧
+     ======================================== */
+
+  function setStopOptions(selectElement, stops) {
+
+    selectElement.innerHTML = "";
+
+    const defaultOption =
+      document.createElement("option");
+
+    defaultOption.value = "";
+    defaultOption.textContent =
+      "バス停を選択してください";
+
+    selectElement.appendChild(defaultOption);
+
+
+    stops.forEach(stop => {
+
+      const option =
+        document.createElement("option");
+
+      option.value = stop.code;
+      option.textContent = stop.name;
+
+      selectElement.appendChild(option);
+
+    });
+
+
+    selectElement.disabled = false;
+
+  }
+
+
+  /* ========================================
+     路線変更
+     ======================================== */
+
+  routeSelect.addEventListener("change", () => {
+
+    const route = routeSelect.value;
+
+
+    if (!route) {
+
+      fromStop.innerHTML =
+        '<option value="">先に路線を選択してください</option>';
+
+      toStop.innerHTML =
+        '<option value="">先に路線を選択してください</option>';
+
+      fromStop.disabled = true;
+      toStop.disabled = true;
+
+      return;
+    }
+
+
+    const stops =
+      busRoutes[route];
+
+    setStopOptions(fromStop, stops);
+    setStopOptions(toStop, stops);
+
+  });
+
+
+  /* ========================================
+     接近情報URL
+     ======================================== */
+
+  function createApproachingUrl(
+    fromCode,
+    toCode
+  ) {
+
+    return (
+      "https://transfer-cloud.navitime.biz/seibubus/approachings" +
+      "?departure-busstop=" +
+      encodeURIComponent(fromCode) +
+      "&arrival-busstop=" +
+      encodeURIComponent(toCode)
+    );
+
+  }
+
+
+  /* ========================================
+     接近情報を見る
+     ======================================== */
+
+  searchButton.addEventListener("click", () => {
+
+    const fromCode =
+      fromStop.value;
+
+    const toCode =
+      toStop.value;
+
+
+    if (!routeSelect.value) {
+
+      alert("路線を選択してください。");
+
+      return;
+    }
+
+
+    if (!fromCode || !toCode) {
+
+      alert(
+        "乗車バス停と降車バス停を選択してください。"
+      );
+
+      return;
+    }
+
+
+    if (fromCode === toCode) {
+
+      alert(
+        "乗車バス停と降車バス停を別々に選択してください。"
+      );
+
+      return;
+    }
+
+
+    const url =
+      createApproachingUrl(
+        fromCode,
+        toCode
+      );
+
+
+    window.open(
+      url,
+      "_blank",
+      "noopener"
+    );
+
+  });
+
+
+  /* ========================================
+     お気に入り取得
+     ======================================== */
+
+  function getFavorites() {
+
+    try {
+
+      return JSON.parse(
+        localStorage.getItem(FAVORITE_KEY)
+      ) || [];
+
+    } catch (error) {
+
+      return [];
+
+    }
+
+  }
+
+
+  /* ========================================
+     お気に入り保存
+     ======================================== */
+
+  function saveFavorites(favorites) {
+
+    localStorage.setItem(
+      FAVORITE_KEY,
+      JSON.stringify(favorites)
+    );
+
+  }
+
+
+  /* ========================================
+     お気に入り追加
+     ======================================== */
+
+  favoriteAddButton.addEventListener(
+    "click",
+    () => {
+
+      const route =
+        routeSelect.value;
+
+      const fromCode =
+        fromStop.value;
+
+      const toCode =
+        toStop.value;
+
+
+      if (!route) {
+
+        alert("路線を選択してください。");
+
+        return;
+      }
+
+
+      if (!fromCode || !toCode) {
+
+        alert(
+          "乗車バス停と降車バス停を選択してください。"
+        );
+
+        return;
+      }
+
+
+      if (fromCode === toCode) {
+
+        alert(
+          "乗車バス停と降車バス停を別々に選択してください。"
+        );
+
+        return;
+      }
+
+
+      const stops =
+        busRoutes[route];
+
+
+      const from =
+        stops.find(
+          stop => stop.code === fromCode
+        );
+
+
+      const to =
+        stops.find(
+          stop => stop.code === toCode
+        );
+
+
+      const favorites =
+        getFavorites();
+
+
+      const alreadyExists =
+        favorites.some(favorite =>
+
+          favorite.route === route &&
+          favorite.fromCode === fromCode &&
+          favorite.toCode === toCode
+
+        );
+
+
+      if (alreadyExists) {
+
+        alert(
+          "この経路はすでにお気に入りに登録されています。"
+        );
+
+        return;
+      }
+
+
+      favorites.push({
+
+        route: route,
+
+        fromCode: fromCode,
+        toCode: toCode,
+
+        fromName: from.name,
+        toName: to.name
+
+      });
+
+
+      saveFavorites(favorites);
+
+      renderFavorites();
+
+    }
+  );
+
+
+  /* ========================================
+     お気に入り表示
+     ======================================== */
+
+  function renderFavorites() {
+
+    const favorites =
+      getFavorites();
+
+
+    favoriteList.innerHTML = "";
+
+
+    if (favorites.length === 0) {
+
+      const empty =
+        document.createElement("div");
+
+      empty.className =
+        "empty-favorite";
+
+      empty.textContent =
+        "お気に入りはまだありません。";
+
+      favoriteList.appendChild(empty);
+
+      return;
+    }
+
+
+    favorites.forEach(
+      (favorite, index) => {
+
+        const item =
+          document.createElement("div");
+
+        item.className =
+          "favorite-item";
+
+
+        /* --------------------------------
+           お気に入りボタン
+           -------------------------------- */
+
+        const mainButton =
+          document.createElement("button");
+
+        mainButton.className =
+          "favorite-main";
+
+
+        mainButton.innerHTML = `
+
+          <div class="favorite-route">
+            ⭐ ${favorite.route}
+          </div>
+
+          <div class="favorite-stops">
+            ${favorite.fromName}
+            →
+            ${favorite.toName}
+          </div>
+
+        `;
+
+
+        /* クリックで直接接近情報 */
+
+        mainButton.addEventListener(
+          "click",
+          () => {
+
+            const url =
+              createApproachingUrl(
+                favorite.fromCode,
+                favorite.toCode
+              );
+
+
+            window.open(
+              url,
+              "_blank",
+              "noopener"
+            );
+
+          }
+        );
+
+
+        /* --------------------------------
+           削除ボタン
+           -------------------------------- */
+
+        const deleteButton =
+          document.createElement("button");
+
+        deleteButton.className =
+          "delete-button";
+
+        deleteButton.textContent =
+          "🗑️";
+
+        deleteButton.title =
+          "お気に入りから削除";
+
+
+        deleteButton.addEventListener(
+          "click",
+          event => {
+
+            event.stopPropagation();
+
+            deleteFavorite(index);
+
+          }
+        );
+
+
+        item.appendChild(mainButton);
+        item.appendChild(deleteButton);
+
+        favoriteList.appendChild(item);
+
+      }
+    );
+
+  }
+
+
+  /* ========================================
+     お気に入り削除
+     ======================================== */
+
+  function deleteFavorite(index) {
+
+    const favorites =
+      getFavorites();
+
+
+    favorites.splice(
+      index,
+      1
+    );
+
+
+    saveFavorites(favorites);
+
+    renderFavorites();
+
+  }
+
+
+  /* ========================================
+     初期表示
+     ======================================== */
+
+  renderFavorites();
+
+</script>
+
+</body>
+</html>
